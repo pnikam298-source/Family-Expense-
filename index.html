@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>FamilyFinance</title>
+<style>
+:root {
+  --navy:#0d1b2a;--navy2:#112236;--navy3:#1a3050;
+  --accent:#4f8ef7;--accent2:#6fa3ff;
+  --green:#2ecc87;--red:#ff5c5c;--amber:#f5a623;
+  --text:#e8edf5;--muted:#7a8fa8;--muted2:#3a4a5a;
+  --border:rgba(255,255,255,0.07);--card:rgba(255,255,255,0.04);
+  --radius:14px;--mono:'SF Mono','Fira Code',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--navy);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;}
+input,select,button{font-family:inherit;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:block;}
+
+/* SHARED */
+.btn{padding:12px 20px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;width:100%;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-primary:active{transform:scale(.97);}
+.btn-ghost{background:var(--card);color:var(--text);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--navy3);}
+.btn-sm{padding:8px 14px;font-size:12px;width:auto;}
+.field{margin-bottom:14px;}
+.field-label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.field input{width:100%;background:var(--navy2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;color:var(--text);font-size:14px;outline:none;transition:border .15s;}
+.field input:focus{border-color:var(--accent);}
+.field input::placeholder{color:var(--muted2);}
+.hint{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6;text-align:center;}
+.card-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:100%;max-width:420px;}
+.card-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:18px;}
+
+/* SETUP */
+#screen-setup{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;min-height:100vh;}
+.logo{font-size:36px;font-weight:800;letter-spacing:-1px;margin-bottom:4px;}
+.logo span{color:var(--accent);}
+.tagline{color:var(--muted);font-size:13px;margin-bottom:28px;}
+.how-to{background:var(--navy3);border-radius:10px;padding:14px;margin-bottom:16px;font-size:12px;color:var(--muted);line-height:1.9;}
+.how-to strong{color:var(--text);}
+
+/* LOGIN */
+#screen-login{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;min-height:100vh;}
+.user-list{display:flex;flex-direction:column;gap:10px;width:100%;max-width:360px;margin-bottom:16px;}
+.user-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:14px;}
+.user-card:hover{background:var(--navy3);border-color:var(--accent);}
+.u-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;flex-shrink:0;}
+.u-info{flex:1;}
+.u-name{font-size:15px;font-weight:700;}
+.u-hint{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* PIN */
+.pin-wrap{width:100%;max-width:340px;text-align:center;}
+.pin-av{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 10px;}
+.pin-name{font-size:18px;font-weight:700;}
+.pin-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin:22px 0;}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--border);transition:background .15s;}
+.dot.on{background:var(--accent);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto;}
+.pk{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;font-size:20px;font-weight:600;cursor:pointer;transition:all .15s;}
+.pk:active{background:var(--accent);color:#fff;transform:scale(.93);}
+.pk.del{font-size:15px;color:var(--muted);}
+.pin-err{color:var(--red);font-size:13px;margin-top:12px;min-height:18px;}
+.back{color:var(--muted);font-size:13px;cursor:pointer;margin-top:16px;}
+.back:hover{color:var(--accent);}
+
+/* ADD USER */
+.color-row{display:flex;gap:8px;flex-wrap:wrap;}
+.c-opt{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border .15s;}
+.c-opt.picked{border-color:#fff;}
+
+/* APP TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;background:var(--navy);}
+.app-logo{font-size:16px;font-weight:800;letter-spacing:-.5px;}
+.app-logo span{color:var(--accent);}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted2);margin-left:8px;}
+.sync-dot.ok{background:var(--green);}
+.sync-dot.busy{background:var(--amber);animation:pulse 1s infinite;}
+.sync-dot.err{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.user-pill{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 12px 5px 5px;cursor:pointer;}
+.pill-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+.pill-name{font-size:12px;font-weight:600;}
+
+/* CONTAINER */
+.container{max-width:860px;margin:0 auto;padding:0 16px 80px;}
+
+/* SUMMARY */
+.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 0 4px;}
+@media(min-width:580px){.sum-grid{grid-template-columns:repeat(4,1fr);}}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+.sc-lbl{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;}
+.sc-val{font-family:var(--mono);font-size:20px;font-weight:700;}
+.sc-val.inc{color:var(--green);}
+.sc-val.exp{color:var(--red);}
+.sc-val.bal{color:var(--accent2);}
+.sc-sub{font-size:10px;color:var(--muted);margin-top:4px;}
+
+/* MONTH NAV */
+.month-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0 2px;}
+.month-nav{display:flex;align-items:center;gap:10px;}
+.month-lbl{font-size:15px;font-weight:700;}
+.icon-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;}
+.icon-btn:hover{background:var(--navy3);color:var(--text);}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin:14px 0;background:var(--card);padding:4px;border-radius:11px;border:1px solid var(--border);}
+.tab{flex:1;padding:8px 4px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.tab.active{background:var(--navy3);color:var(--text);}
+
+/* FORM */
+.fc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;}
+.type-toggle{display:flex;background:var(--navy2);border-radius:8px;padding:3px;border:1px solid var(--border);margin-bottom:14px;}
+.type-opt{flex:1;padding:7px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.type-opt.active{background:var(--accent);color:#fff;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+@media(min-width:520px){.frow.three{grid-template-columns:1fr 1fr 1fr;}}
+.ff{grid-column:1/-1;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.fg label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.fg input,.fg select{background:var(--navy2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px;outline:none;transition:border .15s;}
+.fg input:focus,.fg select:focus{border-color:var(--accent);}
+.fg input::placeholder{color:var(--muted2);}
+.fg select option{background:var(--navy2);}
+.amt-w{position:relative;}
+.amt-pre{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-family:var(--mono);font-size:14px;}
+.amt-inp{padding-left:26px!important;font-family:var(--mono);font-size:16px!important;}
+.form-actions{display:flex;gap:8px;margin-top:14px;}
+.form-actions .btn{flex:1;}
+
+/* TX LIST */
+.day-group{margin-bottom:4px;}
+.day-hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 0 5px;}
+.day-lbl{font-size:11px;color:var(--muted);font-weight:700;}
+.day-tot{font-size:10px;font-family:var(--mono);color:var(--muted);}
+.tx-list{display:flex;flex-direction:column;gap:5px;}
+.tx-row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 13px;transition:background .12s;}
+.tx-row:hover{background:var(--navy3);}
+.tx-ic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.tx-body{flex:1;min-width:0;}
+.tx-cat{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tx-meta{font-size:10px;color:var(--muted);margin-top:2px;}
+.tx-amt{font-family:var(--mono);font-size:14px;font-weight:700;flex-shrink:0;}
+.tx-amt.exp{color:var(--red);}
+.tx-amt.inc{color:var(--green);}
+.tx-del{width:26px;height:26px;border-radius:6px;border:none;background:transparent;color:transparent;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+.tx-row:hover .tx-del{color:var(--muted);}
+.tx-del:hover{background:rgba(255,92,92,.15);color:var(--red)!important;}
+
+/* BUDGET */
+.b-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
+.b-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:14px;}
+.b-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.b-cat{font-size:13px;font-weight:600;}
+.b-pct{font-size:11px;font-family:var(--mono);font-weight:700;}
+.b-bg{height:4px;background:var(--border);border-radius:2px;margin-bottom:7px;}
+.b-fill{height:100%;border-radius:2px;transition:width .4s;}
+.b-nums{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-family:var(--mono);}
+
+/* EMPTY */
+.empty{text-align:center;padding:44px 20px;color:var(--muted);}
+.empty-ic{font-size:32px;margin-bottom:10px;}
+.empty-txt{font-size:14px;line-height:1.6;}
+
+/* BOTTOM NAV */
+.bot-nav{position:fixed;bottom:0;left:0;right:0;background:var(--navy2);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;cursor:pointer;border:none;background:transparent;color:var(--muted);transition:color .15s;}
+.nav-item.active{color:var(--accent);}
+.nav-ic{font-size:19px;margin-bottom:3px;}
+.nav-lbl{font-size:10px;font-weight:600;}
+
+/* SETTINGS SHEET */
+#s-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;}
+#s-overlay.show{display:block;}
+#s-sheet{position:fixed;bottom:-110%;left:0;right:0;background:var(--navy2);border-top:1px solid var(--border);border-radius:20px 20px 0 0;z-index:201;transition:bottom .3s;padding:20px 20px 44px;max-height:80vh;overflow-y:auto;}
+#s-sheet.open{bottom:0;}
+.s-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;}
+.s-title{font-size:16px;font-weight:700;margin-bottom:20px;}
+.s-sec{margin-bottom:22px;}
+.s-sec-lbl{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
+.s-input{width:100%;background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;margin-bottom:8px;}
+.s-input:focus{border-color:var(--accent);}
+
+/* TOAST */
+#toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy3);border:1px solid var(--border);border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;transition:all .3s;z-index:999;white-space:nowrap;opacity:0;pointer-events:none;}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+#toast.ok{border-color:var(--green);color:var(--green);}
+#toast.err{border-color:var(--red);color:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="screen-setup" class="screen active">
+  <div style="display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:40px 24px;justify-content:center;">
+    <div class="logo">family<span>₹</span></div>
+    <div class="tagline">Personal finance for your whole family</div>
+    <div class="card-box">
+      <div class="card-title">One-time sheet setup</div>
+      <div class="field"><div class="field-label">Google Sheet ID</div><input id="cfg-sid" placeholder="Paste from the URL between /d/ and /edit"></div>
+      <div class="field"><div class="field-label">Google Sheets API Key</div><input id="cfg-key" placeholder="AIzaSy…"></div>
+      <div class="how-to">
+        <strong>Quick setup:</strong><br>
+        1. Create a Google Sheet → copy the ID from the URL<br>
+        2. console.cloud.google.com → enable Sheets API → create API Key<br>
+        3. In the Sheet: Share → <strong>Anyone with link can edit</strong><br>
+        4. The app auto-creates a separate tab for each family member
+      </div>
+      <button class="btn btn-primary" id="setup-btn" onclick="setupDone()">Continue →</button>
+      <div id="setup-err" style="font-size:13px;margin-top:12px;line-height:1.6;min-height:20px;"></div>
+      <div class="hint">Credentials saved locally in your browser only.</div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen">
+  <div id="login-wrap" style="display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:40px 24px;justify-content:center;">
+
+    <!-- user list view -->
+    <div id="view-users" style="width:100%;max-width:360px;">
+      <div class="logo" style="text-align:center;">family<span>₹</span></div>
+      <div style="color:var(--muted);font-size:13px;text-align:center;margin:6px 0 28px;">Who's logging in?</div>
+      <div class="user-list" id="user-list"></div>
+      <button class="btn btn-ghost" onclick="showView('add-user')" style="max-width:360px;width:100%;">+ Add family member</button>
+    </div>
+
+    <!-- pin view -->
+    <div id="view-pin" style="display:none;width:100%;max-width:340px;text-align:center;">
+      <div class="pin-av" id="pin-av"></div>
+      <div class="pin-name" id="pin-nm"></div>
+      <div class="pin-sub">Enter your PIN</div>
+      <div class="pin-dots">
+        <div class="dot" id="d0"></div><div class="dot" id="d1"></div>
+        <div class="dot" id="d2"></div><div class="dot" id="d3"></div>
+      </div>
+      <div class="pin-pad">
+        <button class="pk" onclick="pk('1')">1</button><button class="pk" onclick="pk('2')">2</button><button class="pk" onclick="pk('3')">3</button>
+        <button class="pk" onclick="pk('4')">4</button><button class="pk" onclick="pk('5')">5</button><button class="pk" onclick="pk('6')">6</button>
+        <button class="pk" onclick="pk('7')">7</button><button class="pk" onclick="pk('8')">8</button><button class="pk" onclick="pk('9')">9</button>
+        <div></div><button class="pk" onclick="pk('0')">0</button><button class="pk del" onclick="pd()">⌫</button>
+      </div>
+      <div class="pin-err" id="pin-err"></div>
+      <div class="back" onclick="showView('users')">← Back</div>
+    </div>
+
+    <!-- add user view -->
+    <div id="view-add-user" style="display:none;width:100%;max-width:380px;">
+      <div class="card-box">
+        <div class="card-title">New family member</div>
+        <div class="field"><div class="field-label">Name</div><input id="nu-name" placeholder="e.g. Pratik" maxlength="20"></div>
+        <div class="field">
+          <div class="field-label">Choose colour</div>
+          <div class="color-row" id="color-row">
+            <div class="c-opt picked" data-c="#4f8ef7" style="background:#4f8ef7;" onclick="pickC(this)"></div>
+            <div class="c-opt" data-c="#2ecc87" style="background:#2ecc87;" onclick="pickC(this)"></div>
+            <div class="c-opt" data-c="#ff5c5c" style="background:#ff5c5c;" onclick="pickC(this)"></div>
+            <div class="c-opt" data-c="#f5a623" style="background:#f5a623;" onclick="pickC(this)"></div>
+            <div class="c-opt" data-c="#a29bfe" style="background:#a29bfe;" onclick="pickC(this)"></div>
+            <div class="c-opt" data-c="#fd79a8" style="background:#fd79a8;" onclick="pickC(this)"></div>
+          </div>
+        </div>
+        <div class="field"><div class="field-label">4-digit PIN</div><input id="nu-pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••"></div>
+        <div class="field"><div class="field-label">Confirm PIN</div><input id="nu-pin2" type="password" inputmode="numeric" maxlength="4" placeholder="••••"></div>
+        <button class="btn btn-primary" onclick="createUser()" style="margin-bottom:8px;">Create account</button>
+        <button class="btn btn-ghost" onclick="showView('users')">Cancel</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- APP -->
+<div id="screen-app" class="screen">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;">
+      <div class="app-logo">family<span>₹</span></div>
+      <div class="sync-dot" id="sdot"></div>
+    </div>
+    <div class="user-pill" onclick="openSettings()">
+      <div class="pill-av" id="pill-av"></div>
+      <div class="pill-name" id="pill-nm"></div>
+      <span style="color:var(--muted);font-size:11px;margin-left:2px;">⌄</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="month-row">
+      <div class="month-nav">
+        <button class="icon-btn" onclick="chgMonth(-1)">‹</button>
+        <span class="month-lbl" id="mlbl"></span>
+        <button class="icon-btn" onclick="chgMonth(1)">›</button>
+      </div>
+      <button class="icon-btn" onclick="syncNow()" title="Sync" style="font-size:12px;">↻</button>
+    </div>
+
+    <div class="sum-grid">
+      <div class="sc"><div class="sc-lbl">Income</div><div class="sc-val inc" id="s-inc">₹0</div><div class="sc-sub" id="s-inc-c">0 entries</div></div>
+      <div class="sc"><div class="sc-lbl">Expenses</div><div class="sc-val exp" id="s-exp">₹0</div><div class="sc-sub" id="s-exp-c">0 entries</div></div>
+      <div class="sc"><div class="sc-lbl">Balance</div><div class="sc-val bal" id="s-bal">₹0</div><div class="sc-sub" id="s-bal-r">—</div></div>
+      <div class="sc"><div class="sc-lbl">Daily avg</div><div class="sc-val" id="s-day">₹0</div><div class="sc-sub" id="s-day-s">this month</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tb-add" onclick="swTab('add',this)">Add</button>
+      <button class="tab" id="tb-txns" onclick="swTab('txns',this)">Transactions</button>
+      <button class="tab" id="tb-bgt" onclick="swTab('bgt',this)">Budget</button>
+    </div>
+
+    <!-- ADD TAB -->
+    <div id="tab-add">
+      <div class="fc">
+        <div class="card-title">New entry</div>
+        <div class="type-toggle">
+          <button class="type-opt active" onclick="setType('expense',this)">Expense</button>
+          <button class="type-opt" onclick="setType('income',this)">Income</button>
+        </div>
+        <div class="frow three">
+          <div class="fg"><label>Amount</label><div class="amt-w"><span class="amt-pre">₹</span><input class="amt-inp" id="f-amt" type="number" inputmode="decimal" placeholder="0" min="0"></div></div>
+          <div class="fg"><label>Category</label><select id="f-cat"></select></div>
+          <div class="fg"><label>Date</label><input id="f-dt" type="date"></div>
+          <div class="fg ff"><label>Note (optional)</label><input id="f-note" placeholder="Swiggy, petrol, salary…"></div>
+          <div class="fg"><label>Payment</label>
+            <select id="f-pay">
+              <option>UPI</option><option>Cash</option><option>Credit Card</option>
+              <option>Debit Card</option><option>Bank Transfer</option><option>Wallet</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="save-btn" onclick="addEntry()">Save to Sheet ↗</button>
+          <button class="btn btn-ghost" style="flex:0 0 auto;padding:12px 14px;" onclick="clearForm()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TXNS TAB -->
+    <div id="tab-txns" style="display:none;"><div id="tx-wrap"></div></div>
+
+    <!-- BUDGET TAB -->
+    <div id="tab-bgt" style="display:none;">
+      <div class="fc">
+        <div class="card-title">Set monthly budget</div>
+        <div class="frow">
+          <div class="fg"><label>Category</label><select id="b-cat"></select></div>
+          <div class="fg"><label>Limit ₹/month</label><div class="amt-w"><span class="amt-pre">₹</span><input class="amt-inp" id="b-amt" type="number" inputmode="decimal" placeholder="0"></div></div>
+        </div>
+        <div style="margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="saveBudget()">Set Budget</button></div>
+      </div>
+      <div class="b-grid" id="b-grid"></div>
+    </div>
+  </div>
+
+  <div class="bot-nav">
+    <button class="nav-item active" id="nav-add" onclick="swTab('add',null,'add')"><div class="nav-ic">＋</div><div class="nav-lbl">Add</div></button>
+    <button class="nav-item" id="nav-txns" onclick="swTab('txns',null,'txns')"><div class="nav-ic">📋</div><div class="nav-lbl">Transactions</div></button>
+    <button class="nav-item" id="nav-bgt" onclick="swTab('bgt',null,'bgt')"><div class="nav-ic">🎯</div><div class="nav-lbl">Budget</div></button>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="s-overlay" onclick="closeSettings()"></div>
+<div id="s-sheet">
+  <div class="s-handle"></div>
+  <div class="s-title">Settings</div>
+  <div class="s-sec">
+    <div class="s-sec-lbl">Signed in as</div>
+    <div style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;">
+      <div id="sa-av" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;"></div>
+      <div><div id="sa-nm" style="font-weight:700;font-size:15px;"></div><div style="font-size:11px;color:var(--muted);">Your data is private — separate from other members</div></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="logout()" style="width:100%;">Sign out</button>
+  </div>
+  <div class="s-sec">
+    <div class="s-sec-lbl">Google Sheet</div>
+    <input class="s-input" id="s-sid" placeholder="Sheet ID">
+    <input class="s-input" id="s-key" placeholder="API Key">
+    <button class="btn btn-primary btn-sm" onclick="saveSheetCfg()">Save & reconnect</button>
+  </div>
+  <div class="s-sec">
+    <div class="s-sec-lbl">Danger zone</div>
+    <button class="btn btn-sm" style="width:100%;background:rgba(255,92,92,.1);color:var(--red);border:1px solid rgba(255,92,92,.3);" onclick="resetApp()">Reset app (local settings only)</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──
+let cfg={sheetId:'',apiKey:''};
+let users=[];
+let sess=null;
+let txns=[];
+let budgets={};
+let etype='expense';
+let cm=new Date().getMonth(), cy=new Date().getFullYear();
+let pinBuf='', pinUser=null, selColor='#4f8ef7';
+
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const HDR=['Date','Type','Amount','Category','Note','Payment','Timestamp'];
+const ECATS=[
+  {n:'Food & Dining',i:'🍽️',c:'#ff6b6b'},{n:'Groceries',i:'🛒',c:'#4ecdc4'},
+  {n:'Transportation',i:'🚗',c:'#45b7d1'},{n:'Fuel',i:'⛽',c:'#f9ca24'},
+  {n:'Shopping',i:'🛍️',c:'#a29bfe'},{n:'Entertainment',i:'🎬',c:'#fd79a8'},
+  {n:'Health',i:'💊',c:'#55efc4'},{n:'Utilities',i:'💡',c:'#fdcb6e'},
+  {n:'Rent',i:'🏠',c:'#6c5ce7'},{n:'Education',i:'📚',c:'#00b894'},
+  {n:'Travel',i:'✈️',c:'#0984e3'},{n:'EMI',i:'🏦',c:'#e17055'},
+  {n:'Insurance',i:'🛡️',c:'#74b9ff'},{n:'Miscellaneous',i:'📦',c:'#b2bec3'}
+];
+const ICATS=[
+  {n:'Salary',i:'💰',c:'#2ecc87'},{n:'Freelancing',i:'💻',c:'#4f8ef7'},
+  {n:'Business',i:'🏢',c:'#a29bfe'},{n:'Interest',i:'📈',c:'#fdcb6e'},
+  {n:'Rental',i:'🏘️',c:'#55efc4'},{n:'Dividends',i:'📊',c:'#00b894'},
+  {n:'Refund',i:'↩️',c:'#74b9ff'},{n:'Other',i:'🎁',c:'#b2bec3'}
+];
+
+// ── PERSIST ──
+function load(){
+  try{const c=localStorage.getItem('ff_cfg');if(c)cfg=JSON.parse(c);}catch(e){}
+  try{const u=localStorage.getItem('ff_usr');if(u)users=JSON.parse(u);}catch(e){}
+  try{const s=localStorage.getItem('ff_ses');if(s)sess=JSON.parse(s);}catch(e){}
+}
+function saveCfg(){localStorage.setItem('ff_cfg',JSON.stringify(cfg));}
+function saveUsers(){localStorage.setItem('ff_usr',JSON.stringify(users));}
+function saveSess(){localStorage.setItem('ff_ses',JSON.stringify(sess));}
+function clearSess(){sess=null;localStorage.removeItem('ff_ses');}
+
+async function hashPin(p){
+  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(p+'ff9x'));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+// ── BOOT ──
+function boot(){
+  load();
+  if(!cfg.sheetId||!cfg.apiKey){showSc('setup');return;}
+  if(sess){launchApp();return;}
+  showSc('login');
+  renderUsers();
+}
+function showSc(n){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+n).classList.add('active');
+}
+
+// ── SETUP ──
+async function setupDone(){
+  const id=document.getElementById('cfg-sid').value.trim();
+  const k=document.getElementById('cfg-key').value.trim();
+  const errEl=document.getElementById('setup-err');
+  errEl.textContent='';
+  if(!id){errEl.textContent='⚠ Please paste your Sheet ID.';return;}
+  if(!k){errEl.textContent='⚠ Please paste your API Key.';return;}
+  // Basic format checks
+  if(id.length < 20){errEl.textContent='⚠ That doesn\'t look like a valid Sheet ID — it should be a long string from the URL.';return;}
+  if(!k.startsWith('AIza')){errEl.textContent='⚠ That doesn\'t look like a valid API Key — it should start with AIza...';return;}
+  // Live connection test
+  const btn=document.getElementById('setup-btn');
+  btn.textContent='Testing connection…';btn.disabled=true;
+  errEl.style.color='var(--accent2)';errEl.textContent='Connecting to your Google Sheet…';
+  try{
+    const url=`https://sheets.googleapis.com/v4/spreadsheets/${id}?key=${k}&fields=spreadsheetId,properties.title`;
+    const res=await fetch(url);
+    const data=await res.json();
+    if(data.error){
+      const msg=data.error.message||'Unknown error';
+      if(msg.includes('API key')||msg.includes('key')){
+        errEl.style.color='var(--red)';errEl.textContent='⚠ API Key is invalid or the Sheets API is not enabled. Go to console.cloud.google.com → APIs & Services → Library → search "Google Sheets API" → Enable it.';
+      } else if(msg.includes('not found')||msg.includes('404')){
+        errEl.style.color='var(--red)';errEl.textContent='⚠ Sheet not found. Double-check you copied the Sheet ID correctly from the URL.';
+      } else if(msg.includes('permission')||msg.includes('403')){
+        errEl.style.color='var(--red)';errEl.textContent='⚠ Permission denied. Make sure the Sheet is shared as "Anyone with the link can edit".';
+      } else {
+        errEl.style.color='var(--red)';errEl.textContent='⚠ Error: '+msg;
+      }
+      btn.textContent='Continue →';btn.disabled=false;return;
+    }
+    // Success
+    const title=data.properties?.title||'Your Sheet';
+    errEl.style.color='var(--green)';errEl.textContent=`✓ Connected to "${title}" successfully!`;
+    cfg={sheetId:id,apiKey:k};saveCfg();
+    setTimeout(()=>{showSc('login');renderUsers();},800);
+  }catch(e){
+    errEl.style.color='var(--red)';errEl.textContent='⚠ Network error — check your internet connection and try again.';
+    btn.textContent='Continue →';btn.disabled=false;
+  }
+}
+
+// ── LOGIN VIEWS ──
+function showView(v){
+  ['users','pin','add-user'].forEach(n=>document.getElementById('view-'+n).style.display='none');
+  document.getElementById('view-'+v).style.display='block';
+}
+
+// ── USERS ──
+function renderUsers(){
+  const w=document.getElementById('user-list');
+  if(!users.length){
+    w.innerHTML='<div style="text-align:center;color:var(--muted);font-size:14px;margin-bottom:16px;">No accounts yet. Add a family member below.</div>';
+    return;
+  }
+  w.innerHTML=users.map(u=>`
+    <div class="user-card" onclick="selectUser('${u.id}')">
+      <div class="u-av" style="background:${u.c}22;color:${u.c};">${ini(u.n)}</div>
+      <div class="u-info"><div class="u-name">${u.n}</div><div class="u-hint">Tap to enter PIN</div></div>
+      <div style="color:var(--muted);font-size:18px;">›</div>
+    </div>`).join('');
+}
+
+function pickC(el){
+  document.querySelectorAll('.c-opt').forEach(e=>e.classList.remove('picked'));
+  el.classList.add('picked');
+  selColor=el.dataset.c;
+}
+
+async function createUser(){
+  const name=document.getElementById('nu-name').value.trim();
+  const p1=document.getElementById('nu-pin').value;
+  const p2=document.getElementById('nu-pin2').value;
+  if(!name){toast('Enter a name','err');return;}
+  if(!/^\d{4}$/.test(p1)){toast('PIN must be 4 digits','err');return;}
+  if(p1!==p2){toast('PINs do not match','err');return;}
+  if(users.find(u=>u.n.toLowerCase()===name.toLowerCase())){toast('Name taken','err');return;}
+  const h=await hashPin(p1);
+  const u={id:'u'+Date.now(),n:name,c:selColor,h};
+  users.push(u);saveUsers();
+  await initUserTab(u);
+  document.getElementById('nu-name').value='';
+  document.getElementById('nu-pin').value='';
+  document.getElementById('nu-pin2').value='';
+  showView('users');renderUsers();
+  toast(`Welcome, ${name}!`,'ok');
+}
+
+// ── PIN ──
+function selectUser(uid){
+  pinUser=users.find(u=>u.id===uid);
+  if(!pinUser)return;
+  pinBuf='';
+  document.getElementById('pin-err').textContent='';
+  const av=document.getElementById('pin-av');
+  av.textContent=ini(pinUser.n);
+  av.style.background=pinUser.c+'33';
+  av.style.color=pinUser.c;
+  document.getElementById('pin-nm').textContent=pinUser.n;
+  updDots();
+  showView('pin');
+}
+function pk(d){if(pinBuf.length>=4)return;pinBuf+=d;updDots();if(pinBuf.length===4)setTimeout(checkPin,110);}
+function pd(){pinBuf=pinBuf.slice(0,-1);document.getElementById('pin-err').textContent='';updDots();}
+function updDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('on',i<pinBuf.length);}
+async function checkPin(){
+  const h=await hashPin(pinBuf);
+  if(h===pinUser.h){
+    sess={uid:pinUser.id,n:pinUser.n,c:pinUser.c};
+    saveSess();launchApp();
+  } else {
+    pinBuf='';updDots();
+    document.getElementById('pin-err').textContent='Wrong PIN, try again';
+  }
+}
+
+// ── APP ──
+function launchApp(){
+  showSc('app');
+  const av=document.getElementById('pill-av');
+  av.textContent=ini(sess.n);av.style.background=sess.c+'33';av.style.color=sess.c;
+  document.getElementById('pill-nm').textContent=sess.n;
+  try{budgets=JSON.parse(localStorage.getItem('ff_bgt_'+sess.uid)||'{}');}catch(e){budgets={};}
+  updMonthLbl();populateCats();setToday();syncNow();
+}
+
+function logout(){
+  clearSess();txns=[];closeSettings();
+  showSc('login');showView('users');renderUsers();
+}
+
+// ── SHEETS ──
+function tab(){return sess.n;}
+function rUrl(r){return `https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/${encodeURIComponent(r)}?key=${cfg.apiKey}`;}
+function aUrl(r){return `https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/${encodeURIComponent(r)}:append?valueInputOption=USER_ENTERED&key=${cfg.apiKey}`;}
+function uUrl(r){return `https://sheets.googleapis.com/v4/spreadsheets/${cfg.sheetId}/values/${encodeURIComponent(r)}?valueInputOption=USER_ENTERED&key=${cfg.apiKey}`;}
+
+async function initUserTab(u){
+  try{
+    const r=await fetch(rUrl(`${u.n}!A1:G1`));
+    const d=await r.json();
+    if(!d.values||d.values[0]?.join()!==HDR.join()){
+      await fetch(aUrl(`${u.n}!A1`),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({values:[HDR]})});
+    }
+  }catch(e){
+    await fetch(aUrl(`${u.n}!A1`),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({values:[HDR]})});
+  }
+}
+
+async function syncNow(){
+  if(!sess||!cfg.sheetId)return;
+  dot('busy');
+  try{
+    const r=await fetch(rUrl(`${tab()}!A2:G2000`));
+    const d=await r.json();
+    txns=(d.values||[]).map((row,i)=>({
+      ri:i+2,date:row[0]||'',type:row[1]||'expense',
+      amount:parseFloat(row[2])||0,cat:row[3]||'',
+      note:row[4]||'',pay:row[5]||'',ts:row[6]||''
+    })).filter(t=>t.amount>0);
+    dot('ok');renderAll();
+  }catch(e){dot('err');console.error(e);}
+}
+
+async function appendRow(row){
+  const r=await fetch(aUrl(`${tab()}!A:G`),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({values:[row]})});
+  if(!r.ok)throw new Error('Write failed');
+}
+
+async function clearRow(ri){
+  const r=await fetch(uUrl(`${tab()}!A${ri}:G${ri}`),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({values:[['','','','','','','']]})});
+  if(!r.ok)throw new Error('Delete failed');
+}
+
+// ── ADD ENTRY ──
+async function addEntry(){
+  const amt=parseFloat(document.getElementById('f-amt').value);
+  const cat=document.getElementById('f-cat').value;
+  const dt=document.getElementById('f-dt').value;
+  const note=document.getElementById('f-note').value.trim();
+  const pay=document.getElementById('f-pay').value;
+  if(!amt||amt<=0){toast('Enter a valid amount','err');return;}
+  if(!dt){toast('Pick a date','err');return;}
+  const row=[dt,etype,amt,cat,note,pay,new Date().toISOString()];
+  const btn=document.getElementById('save-btn');
+  btn.textContent='Saving…';btn.disabled=true;dot('busy');
+  try{
+    await initUserTab({n:sess.n});
+    await appendRow(row);
+    dot('ok');
+    toast(`${etype==='expense'?'−':'+'}₹${fmt(amt)} saved`,'ok');
+    clearForm();await syncNow();
+  }catch(e){
+    dot('err');toast('Save failed — check Sheet permissions','err');console.error(e);
+  }
+  btn.textContent='Save to Sheet ↗';btn.disabled=false;
+}
+
+async function delTx(ri){
+  if(!confirm('Delete this entry?'))return;
+  dot('busy');
+  try{await clearRow(ri);await syncNow();toast('Deleted','ok');}
+  catch(e){dot('err');toast('Could not delete','err');}
+}
+
+// ── RENDER ──
+function renderAll(){renderSummary();renderTxns();renderBudgets();}
+
+function mTxns(){
+  return txns.filter(t=>{
+    if(!t.date)return false;
+    const d=new Date(t.date+'T00:00:00');
+    return d.getMonth()===cm&&d.getFullYear()===cy;
+  });
+}
+
+function renderSummary(){
+  const mt=mTxns();
+  const inc=mt.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp=mt.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const bal=inc-exp;
+  const days=new Date().getDate();
+  document.getElementById('s-inc').textContent='₹'+fmt(inc);
+  document.getElementById('s-exp').textContent='₹'+fmt(exp);
+  document.getElementById('s-bal').textContent=(bal>=0?'₹':'-₹')+fmt(Math.abs(bal));
+  document.getElementById('s-day').textContent='₹'+fmt(exp/(days||1));
+  document.getElementById('s-inc-c').textContent=mt.filter(t=>t.type==='income').length+' entries';
+  document.getElementById('s-exp-c').textContent=mt.filter(t=>t.type==='expense').length+' entries';
+  const rate=inc>0?Math.round(bal/inc*100):0;
+  document.getElementById('s-bal-r').textContent=rate+'% savings rate';
+  document.getElementById('s-day-s').textContent='avg over '+days+' days';
+}
+
+function renderTxns(){
+  const w=document.getElementById('tx-wrap');
+  const mt=mTxns().slice().sort((a,b)=>b.date.localeCompare(a.date));
+  if(!mt.length){w.innerHTML='<div class="empty"><div class="empty-ic">📭</div><div class="empty-txt">No transactions this month.<br>Add one in the Add tab.</div></div>';return;}
+  const g={};
+  mt.forEach(t=>{(g[t.date]=g[t.date]||[]).push(t);});
+  let h='';
+  Object.keys(g).sort().reverse().forEach(dk=>{
+    const de=g[dk].filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+    h+=`<div class="day-group"><div class="day-hdr"><div class="day-lbl">${dlbl(dk)}</div>${de>0?`<div class="day-tot">−₹${fmt(de)}</div>`:''}</div><div class="tx-list">`;
+    g[dk].forEach(t=>{
+      const ci=getCat(t.cat,t.type);
+      h+=`<div class="tx-row">
+        <div class="tx-ic" style="background:${ci.c}22;">${ci.i}</div>
+        <div class="tx-body"><div class="tx-cat">${t.cat}${t.note?' · '+t.note:''}</div><div class="tx-meta">${t.pay||''}</div></div>
+        <div class="tx-amt ${t.type}">${t.type==='expense'?'−':'+'}₹${fmt(t.amount)}</div>
+        <button class="tx-del" onclick="delTx(${t.ri})">✕</button>
+      </div>`;
+    });
+    h+='</div></div>';
+  });
+  w.innerHTML=h;
+}
+
+function renderBudgets(){
+  const g=document.getElementById('b-grid');
+  const mt=mTxns().filter(t=>t.type==='expense');
+  const tot={};mt.forEach(t=>{tot[t.cat]=(tot[t.cat]||0)+t.amount;});
+  const keys=Object.keys(budgets).filter(k=>budgets[k]>0);
+  if(!keys.length){g.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-ic">🎯</div><div class="empty-txt">No budgets set.<br>Set a limit above.</div></div>';return;}
+  g.innerHTML=keys.map(cat=>{
+    const lim=budgets[cat],spent=tot[cat]||0;
+    const pct=Math.min(100,Math.round(spent/lim*100));
+    const col=pct>90?'var(--red)':pct>70?'var(--amber)':'var(--green)';
+    const ci=getCat(cat,'expense');
+    return `<div class="b-card"><div class="b-top"><div class="b-cat">${ci.i} ${cat}</div><div class="b-pct" style="color:${col}">${pct}%</div></div><div class="b-bg"><div class="b-fill" style="width:${pct}%;background:${col}"></div></div><div class="b-nums"><span>₹${fmt(spent)}</span><span>₹${fmt(lim)}</span></div></div>`;
+  }).join('');
+}
+
+// ── BUDGETS ──
+function saveBudget(){
+  const cat=document.getElementById('b-cat').value;
+  const amt=parseFloat(document.getElementById('b-amt').value);
+  if(!amt||amt<=0){toast('Enter an amount','err');return;}
+  budgets[cat]=amt;
+  localStorage.setItem('ff_bgt_'+sess.uid,JSON.stringify(budgets));
+  document.getElementById('b-amt').value='';
+  renderBudgets();toast(`Budget: ₹${fmt(amt)}/mo for ${cat}`,'ok');
+}
+
+// ── SETTINGS ──
+function openSettings(){
+  document.getElementById('s-sid').value=cfg.sheetId;
+  document.getElementById('s-key').value=cfg.apiKey;
+  const av=document.getElementById('sa-av');
+  av.textContent=ini(sess.n);av.style.background=sess.c+'33';av.style.color=sess.c;
+  document.getElementById('sa-nm').textContent=sess.n;
+  document.getElementById('s-overlay').classList.add('show');
+  document.getElementById('s-sheet').classList.add('open');
+}
+function closeSettings(){
+  document.getElementById('s-overlay').classList.remove('show');
+  document.getElementById('s-sheet').classList.remove('open');
+}
+function saveSheetCfg(){
+  const id=document.getElementById('s-sid').value.trim();
+  const k=document.getElementById('s-key').value.trim();
+  if(!id||!k){toast('Enter both values','err');return;}
+  cfg={sheetId:id,apiKey:k};saveCfg();closeSettings();syncNow();toast('Saved','ok');
+}
+function resetApp(){
+  if(!confirm('Clear all local settings? Sheet data stays safe.'))return;
+  localStorage.clear();location.reload();
+}
+
+// ── UI HELPERS ──
+function setType(t,el){etype=t;document.querySelectorAll('.type-opt').forEach(b=>b.classList.remove('active'));el.classList.add('active');populateCats();}
+function populateCats(){
+  const cats=etype==='income'?ICATS:ECATS;
+  ['f-cat','b-cat'].forEach(id=>{
+    const s=document.getElementById(id);if(!s)return;
+    s.innerHTML=cats.map(c=>`<option value="${c.n}">${c.i} ${c.n}</option>`).join('');
+  });
+}
+function setToday(){document.getElementById('f-dt').value=new Date().toISOString().split('T')[0];}
+function clearForm(){document.getElementById('f-amt').value='';document.getElementById('f-note').value='';setToday();}
+function updMonthLbl(){document.getElementById('mlbl').textContent=`${MONTHS[cm]} ${cy}`;}
+function chgMonth(d){cm+=d;if(cm>11){cm=0;cy++;}if(cm<0){cm=11;cy--;}updMonthLbl();renderAll();}
+function swTab(n,el,nav){
+  ['add','txns','bgt'].forEach(t=>{
+    document.getElementById('tab-'+t).style.display=t===n?'block':'none';
+    document.getElementById('tb-'+t)?.classList.toggle('active',t===n);
+    document.getElementById('nav-'+t)?.classList.toggle('active',t===n);
+  });
+  if(n==='bgt')renderBudgets();
+}
+function dot(s){const d=document.getElementById('sdot');if(d)d.className='sync-dot '+s;}
+function fmt(n){return Math.round(n).toLocaleString('en-IN');}
+function ini(n){return n.slice(0,2).toUpperCase();}
+function getCat(name,type){
+  const l=type==='income'?ICATS:ECATS;
+  return l.find(c=>c.n===name)||{i:'📦',c:'#b2bec3'};
+}
+function dlbl(dk){
+  const d=new Date(dk+'T00:00:00');
+  const t=new Date();t.setHours(0,0,0,0);
+  const y=new Date(t);y.setDate(t.getDate()-1);
+  if(d.getTime()===t.getTime())return 'Today';
+  if(d.getTime()===y.getTime())return 'Yesterday';
+  return d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+}
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='show '+(type==='ok'?'ok':type==='err'?'err':'');
+  clearTimeout(window._tt);window._tt=setTimeout(()=>el.className='',2600);
+}
+
+boot();
+</script>
+</body>
+</html>
